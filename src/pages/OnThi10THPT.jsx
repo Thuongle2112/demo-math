@@ -1,68 +1,77 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useMatch, useNavigate } from 'react-router-dom';
-// import PracticeExam from '../components/Dethi/PracticeExam';
+import { useAppDispatch, useAppSelector } from '../hooks/hooks';
+import { setActiveView, setUrlParams, setSelectedExamType, setSelectedExam, setSelectedProvince, resetSelection } from '../store/onThiSlice';
 import ExamOverview from '../components/Dethi/ExamOverview';
 import PracticeSelection from '../components/Dethi/PracticeSelection';
 import ExamTypeSelection from '../components/Dethi/ExamTypeSelection';
 import BookResources from '../components/Dethi/BookResources/BookResources';
-import { getDefaultExamSets, getAllExamSetsByProvince } from '../data/examData';
+import NavCard from '../components/Dethi/NavCard';
+import { getAllExamSetsByProvince } from '../data/examData';
+import { NAV_CARDS_CONFIG, getActiveViews } from '../config/navCardsConfig';
+
 
 function OnThi10THPT() {
     const location = useLocation();
     const navigate = useNavigate();
     const matchOverview = useMatch({ path: '/on-thi', end: true });
-    const matchBooks = useMatch({ path: '/on-thi/books', end: true });
+    const matchBooks = useMatch({ path: '/on-thi/books/*', end: true });
     const matchPractice = useMatch({ path: '/on-thi/practice', end: true });
     const matchExamType = useMatch({ path: '/on-thi/exam-type', end: true });
-    const [selectedProvince, setSelectedProvince] = useState('Nam Định');
-    const [activeView, setActiveView] = useState('overview');
-    const [selectedExam, setSelectedExam] = useState(null);
-    const [selectedExamType, setSelectedExamType] = useState(null);
 
+    const dispatch = useAppDispatch();
+    const { activeView, selectedProvince, selectedExamType, urlParams } = useAppSelector(s => s.onThi);
 
-    // URL params state
-    const [urlParams, setUrlParams] = useState({
-        type: null,
-        grade: null
-    });
+    const isInitialLoadRef = useRef(true);
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [activeView]);
 
     useEffect(() => {
         if (matchBooks) {
-            setActiveView('bookResources');
+            dispatch(setActiveView('bookResources'));
         } else if (matchPractice) {
-            setActiveView('practiceSelection');
-        } else if (matchOverview) {
-            setActiveView('overview');
+            dispatch(setActiveView('practiceSelection'));
         } else if (matchExamType) {
-            setActiveView('examTypeSelection');
+            dispatch(setActiveView('examTypeSelection'));
+        } else if (matchOverview) {
+            dispatch(setActiveView('overview'));
         }
-    }, [matchBooks, matchPractice, matchOverview, matchExamType]);
+
+    }, [matchBooks, matchPractice, matchExamType, matchOverview, urlParams, dispatch, navigate]);
+
+    // useEffect(() => {
+    //     const searchParams = new URLSearchParams(location.search);
+    //     const type = searchParams.get('type');
+    //     const grade = searchParams.get('grade');
+
+    //     const parsed = { type: type || null, grade: grade ? parseInt(grade, 10) : null };
+    //     dispatch(setUrlParams(parsed));
+
+    //     if (parsed.type && parsed.grade && location.search) {
+    //         dispatch(setSelectedExamType(parsed.type));
+    //         navigate('/on-thi/practice');
+    //     }
+    // }, [location.search, dispatch, navigate]);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const type = searchParams.get('type');
         const grade = searchParams.get('grade');
 
-        setUrlParams({
-            type: type,
-            grade: grade ? parseInt(grade) : null
-        });
 
-        // // Auto-navigate based on URL params
-        // if (type && grade) {
-        //     // If we have URL params, show filtered overview
-        //     setActiveView('overview');
-        //     // Auto-set exam type if coming from menu
-        //     if (type !== 'tuyensinh' && type !== 'totnghiep') {
-        //         setSelectedExamType(type);
-        //     }
-        // }
+        const parsed = { type: type || null, grade: grade ? parseInt(grade, 10) : null };
+        dispatch(setUrlParams(parsed));
 
-        // Auto-set exam type if coming from menu
-        if (type && grade && type !== 'tuyensinh' && type !== 'totnghiep') {
-            setSelectedExamType(type);
+        // ✅ Set exam type nếu có query params (để filter trong overview)
+        if (parsed.type) {
+            dispatch(setSelectedExamType(parsed.type));
         }
-    }, [location.search]);
+
+        // ✅ Mark that initial load is complete
+        isInitialLoadRef.current = false;
+    }, [location.search, dispatch]);
 
     // Get exam sets based on selected province and URL params
     const getFilteredExamSets = () => {
@@ -84,22 +93,20 @@ function OnThi10THPT() {
     //     setActiveView('examTypeSelection');
     // }
     const handleExamClick = (exam) => {
+        dispatch(setSelectedExam(exam));
+        dispatch(setActiveView('examTypeSelection'));
         navigate('/on-thi/exam-type');
-    }
+    };
 
-    // const handleExamTypeSelect = (examType) => {
-    //     setSelectedExamType(examType);
-    //     setActiveView('practiceSelection');
-    // };
     const handleExamTypeSelect = (examType) => {
-        setSelectedExamType(examType);
+        dispatch(setSelectedExamType(examType));
+        dispatch(setActiveView('practiceSelection'));
         navigate('/on-thi/practice');
     };
 
     const handleProvinceChange = (province) => {
-        setSelectedProvince(province);
-        setSelectedExam(null);
-        setSelectedExamType(null);
+        dispatch(setSelectedProvince(province));
+        dispatch(resetSelection());
     };
 
     // const handleNavCardClick = (cardType) => {
@@ -113,15 +120,26 @@ function OnThi10THPT() {
     //     setSelectedExam(null);
     // };
 
-    const handleNavCardClick = (cardType) => {
-        if (cardType === 'overview') {
-            navigate('/on-thi');
-        } else if (cardType === 'practice') {
-            navigate('/on-thi/exam-type');
-        } else if (cardType === 'books') {
-            navigate('/on-thi/books');
-        }
-        setSelectedExam(null);
+    const handleNavCardClick = (cardId) => {
+        const navigationMap = {
+            overview: () => {
+                navigate('/on-thi', { replace: true });
+                dispatch(resetToOverview());
+            },
+            practice: () => {
+                navigate('/on-thi/exam-type');
+            },
+            books: () => {
+                navigate('/on-thi/books');
+                dispatch(resetSelection());
+            },
+            progress: () => {
+                // TODO: Implement progress view
+                console.log('Progress view coming soon!');
+            }
+        };
+
+        navigationMap[cardId]?.();
     };
 
     // Get page title based on URL params
@@ -190,12 +208,8 @@ function OnThi10THPT() {
                         urlParams={urlParams}
                     />
                 );
-            // case 'examDetail':
-            //     return <PracticeExam selectedExam={selectedExam} />;
             case 'bookResources':
-                return (
-                    <BookResources urlParams={urlParams} />
-                );
+                return <BookResources urlParams={urlParams} />;
             default:
                 return null;
         }
@@ -213,69 +227,51 @@ function OnThi10THPT() {
                 </div>
             </div>
 
-            {/* Navigation Cards */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-                <div className="grid md:grid-cols-4 gap-6 mb-12">
-                    <div
-                        onClick={() => handleNavCardClick('overview')}
-                        className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border ${activeView === 'overview' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-orange-200'
-                            }`}
-                    >
-                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                            </svg>
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Tổng quan</h3>
-                        <p className="text-sm text-gray-600">
-                            Đề xuất và tổng quan đề thi
-                        </p>
+                {/* Mobile: Horizontal scrollable tabs */}
+                <div className="md:hidden mb-8">
+                    <div className="flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory scrollbar-hide">
+                        {NAV_CARDS_CONFIG.map((card) => (
+                            <NavCard
+                                key={card.id}
+                                id={card.id}
+                                iconPath={card.iconPath}
+                                fillRule={card.fillRule}
+                                clipRule={card.clipRule}
+                                title={card.title}
+                                description={card.getDescription(urlParams)}
+                                color={card.color}
+                                isActive={getActiveViews(card.id).includes(activeView)}
+                                onClick={() => handleNavCardClick(card.id)}
+                                variant="mobile"
+                                badge={card.badge}
+                            />
+                        ))}
                     </div>
+                </div>
 
-                    <div
-                        onClick={() => handleNavCardClick('practice')}
-                        className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border ${activeView === 'examTypeSelection' || activeView === 'practiceSelection'
-                            ? 'border-blue-500 ring-2 ring-blue-200'
-                            : 'border-gray-200'
-                            }`}
-                    >
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                            </svg>
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Luyện đề</h3>
-                        <p className="text-sm text-gray-600">
-                            {urlParams.type && urlParams.grade
-                                ? `Luyện đề theo bộ lọc`
-                                : 'Bộ đề luyện tập'
+                {/* Desktop: Grid layout */}
+                <div className="hidden md:grid md:grid-cols-4 gap-6 mb-12">
+                    {NAV_CARDS_CONFIG.map((card) => (
+                        <NavCard
+                            key={card.id}
+                            id={card.id}
+                            iconPath={card.iconPath}
+                            fillRule={card.fillRule}
+                            clipRule={card.clipRule}
+                            title={card.title}
+                            description={
+                                card.getFullDescription
+                                    ? card.getFullDescription()
+                                    : card.getDescription(urlParams)
                             }
-                        </p>
-                    </div>
-
-                    <div
-                        onClick={() => handleNavCardClick('books')}
-                        className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border ${activeView === 'bookResources' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'
-                            }`}
-                    >
-                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                            </svg>
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Tài nguyên Sách</h3>
-                        <p className="text-sm text-gray-600">Tài liệu học tập</p>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border border-gray-200">
-                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-                            </svg>
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Tiến trình ôn luyện</h3>
-                        <p className="text-sm text-gray-600">Theo dõi tiến độ <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full ml-1">NEW</span></p>
-                    </div>
+                            color={card.color}
+                            isActive={getActiveViews(card.id).includes(activeView)}
+                            onClick={() => handleNavCardClick(card.id)}
+                            variant="desktop"
+                            badge={card.badge}
+                        />
+                    ))}
                 </div>
 
                 {/* Main Content */}

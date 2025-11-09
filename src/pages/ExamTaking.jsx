@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExamResult from './ExamResult';
+import MathEditor from '../components/MathLive/MathEditor';
 
 function ExamTaking({ examData, onSubmit, onTimeUp, onBackToPractice }) {
     const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -381,25 +382,24 @@ function ExamTaking({ examData, onSubmit, onTimeUp, onBackToPractice }) {
                                                             {question.subQuestions.map((subQ) => (
                                                                 <div key={subQ.id} className="border border-gray-200 rounded-lg p-6">
                                                                     <p className="font-semibold text-gray-900 mb-4 text-lg">{subQ.content}</p>
-                                                                    <textarea
+                                                                    <MathEditor
                                                                         value={essayAnswers[subQ.id] || ''}
-                                                                        onChange={(e) => !isSubmitted && handleEssayAnswer(subQ.id, e.target.value)}
-                                                                        className="w-full h-40 p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-lg"
-                                                                        placeholder="Nhập câu trả lời của bạn..."
+                                                                        onChange={(data) => !isSubmitted && handleEssayAnswer(subQ.id, data)}
                                                                         disabled={isSubmitted}
+                                                                        placeholder="Nhập câu trả lời (có thể dùng công thức toán học)..."
                                                                     />
-                                                                    {/* Có thể hiện đáp án mẫu ở đây nếu muốn */}
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <textarea
-                                                            value={essayAnswers[question.id] || ''}
-                                                            onChange={(e) => !isSubmitted && handleEssayAnswer(question.id, e.target.value)}
-                                                            className="w-full h-48 p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-lg"
-                                                            placeholder="Nhập câu trả lời của bạn..."
-                                                            disabled={isSubmitted}
-                                                        />
+                                                        <div className="border border-gray-200 rounded-lg p-6">
+                                                            <MathEditor
+                                                                value={essayAnswers[question.id] || ''}
+                                                                onChange={(data) => !isSubmitted && handleEssayAnswer(question.id, data)}
+                                                                disabled={isSubmitted}
+                                                                placeholder="Nhập câu trả lời (có thể dùng công thức toán học)..."
+                                                            />
+                                                        </div>
                                                     )}
                                                 </div>
                                             )}

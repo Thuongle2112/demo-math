@@ -33,7 +33,7 @@ export const books = [
             }
         ],
         downloads: {
-            pdf: "https://www.dropbox.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
+            pdf: "https://dl.dropboxusercontent.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
         }
     },
 
@@ -71,7 +71,7 @@ export const books = [
             }
         ],
         downloads: {
-            pdf: "https://www.dropbox.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
+            pdf: "https://dl.dropboxusercontent.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
         }
     },
 
@@ -101,7 +101,7 @@ export const books = [
             }
         ],
         downloads: {
-            pdf: "https://www.dropbox.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
+            pdf: "https://dl.dropboxusercontent.com/scl/fi/5w6b11wakqud58u0dxyqb/sach-giao-khoa-toan-9-tap-1-ket-noi-tri-thuc-voi-cuoc-song.pdf?rlkey=ez71emdl1wt23b2ro54oejrim&st=dipsgdsh&dl=0"
         }
     }
 ];
