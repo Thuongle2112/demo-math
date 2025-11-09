@@ -1,19 +1,53 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { books } from '../../../data/bookData';
+import BookDetail from './BookDetail';
+import ChapterDetail from './ChapterDetail';
+import LessonDetail from './LessonDetail';
 
 export default function BookResources() {
-    const [selectedBook, setSelectedBook] = useState(null);
-    const [selectedChapter, setSelectedChapter] = useState(null);
-    const [selectedLesson, setSelectedLesson] = useState(null);
+    const { bookId, chapterId, lessonId } = useParams();
+    const navigate = useNavigate();
 
+    // Find current book, chapter, lesson based on URL params
+    const selectedBook = books.find(b => b.id === bookId);
+    const selectedChapter = selectedBook?.chapters?.find(c => c.id === chapterId);
+    const selectedLesson = selectedChapter?.lessons?.find(l => l.id === lessonId);
+
+    // ✅ Redirect to books list if invalid IDs
+    useEffect(() => {
+        if (bookId && !selectedBook) {
+            navigate('/on-thi/books', { replace: true });
+        } else if (chapterId && !selectedChapter) {
+            navigate(`/on-thi/books/${bookId}`, { replace: true });
+        } else if (lessonId && !selectedLesson) {
+            navigate(`/on-thi/books/${bookId}/${chapterId}`, { replace: true });
+        }
+    }, [bookId, chapterId, lessonId, selectedBook, selectedChapter, selectedLesson, navigate]);
+
+    // ✅ Navigation handlers
     const handleSelectBook = (book) => {
-        setSelectedBook(book);
-        setSelectedChapter(null);
-        setSelectedLesson(null);
+        navigate(`/on-thi/books/${book.id}`);
     };
+
     const handleSelectChapter = (chapter) => {
-        setSelectedChapter(chapter);
-        setSelectedLesson(null);
+        navigate(`/on-thi/books/${bookId}/${chapter.id}`);
+    };
+
+    const handleSelectLesson = (lesson) => {
+        navigate(`/on-thi/books/${bookId}/${chapterId}/${lesson.id}`);
+    };
+
+    const handleBackToBooks = () => {
+        navigate('/on-thi/books');
+    };
+
+    const handleBackToBook = () => {
+        navigate(`/on-thi/books/${bookId}`);
+    };
+
+    const handleBackToChapter = () => {
+        navigate(`/on-thi/books/${bookId}/${chapterId}`);
     };
 
     // Phân loại rõ ràng: SGK (sgk) và Sách bài tập (baitap)
@@ -61,129 +95,72 @@ export default function BookResources() {
         </div>
     );
 
-
-    // Overview: split left (SGK) / right (Bài tập)
-    if (!selectedBook) {
+    // ✅ Render based on URL params
+    // Lesson detail view
+    if (lessonId && selectedLesson) {
         return (
-            <div className="space-y-6">
-                <h2 className="text-2xl font-bold mb-2">Tài nguyên Sách</h2>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 mt-10 gap-10">
-                    {/* LEFT: Sách giáo khoa */}
-                    <section className="bg-orange-50 rounded-2xl p-6 shadow-lg">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold">Sách giáo khoa</h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {grouped.sgk.map(book => (
-                                <Card key={book.id} book={book} />
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* RIGHT: Sách bài tập */}
-                    <section className="bg-orange-50 rounded-2xl p-6 shadow-lg">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold">Sách bài tập</h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {grouped.baitap.map(book => (
-                                <Card key={book.id} book={book} />
-                            ))}
-                        </div>
-                    </section>
-                </div>
-            </div>
+            <LessonDetail
+                lesson={selectedLesson}
+                book={selectedBook}
+                onBack={handleBackToChapter}
+            />
         );
     }
 
-    // ...existing detail views (unchanged) ...
-    if (selectedBook && !selectedChapter) {
+    // Chapter detail view
+    if (chapterId && selectedChapter) {
         return (
-            <div>
-                <button className="mb-4 text-blue-600" onClick={() => setSelectedBook(null)}>← Quay lại danh sách sách</button>
-                <div className="flex flex-col md:flex-row gap-8">
-                    <img src={selectedBook.cover} alt={selectedBook.title} className="w-48 h-64 object-cover rounded-xl shadow" />
-                    <div>
-                        <h2 className="text-2xl font-bold mb-2">{selectedBook.title}</h2>
-                        <p className="text-gray-600 mb-2">{selectedBook.publisher} • {selectedBook.year}</p>
-                        <a
-                            href={selectedBook.downloads.pdf}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Tải PDF
-                        </a>
-                        <h3 className="font-semibold mt-4 mb-2">Danh sách chương</h3>
-                        <ul className="space-y-2">
-                            {selectedBook.chapters.map(chap => (
-                                <li
-                                    key={chap.id}
-                                    className="border rounded px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => handleSelectChapter(chap)}
-                                >
-                                    <span className="font-medium">{chap.title}</span>
-                                    <span className="ml-2 text-xs text-gray-500">({chap.lessons.length} bài học)</span>
-                                </li>
-                            ))}
-                        </ul>
+            <ChapterDetail
+                chapter={selectedChapter}
+                onBack={handleBackToBook}
+                onSelectLesson={handleSelectLesson}
+            />
+        );
+    }
+
+    // Book detail view
+    if (bookId && selectedBook) {
+        return (
+            <BookDetail
+                book={selectedBook}
+                onBack={handleBackToBooks}
+                onSelectChapter={handleSelectChapter}
+            />
+        );
+    }
+
+    // ✅ Books overview - default view
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold mb-2">Tài nguyên Sách</h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 mt-10 gap-10">
+                {/* LEFT: Sách giáo khoa */}
+                <section className="bg-orange-50 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold">Sách giáo khoa</h3>
                     </div>
-                </div>
-            </div>
-        );
-    }
 
-    if (selectedBook && selectedChapter && !selectedLesson) {
-        return (
-            <div>
-                <button className="mb-4 text-blue-600" onClick={() => setSelectedChapter(null)}>← Quay lại chi tiết sách</button>
-                <h2 className="text-xl font-bold mb-2">{selectedChapter.title}</h2>
-                <ul className="space-y-2">
-                    {selectedChapter.lessons.map(lesson => (
-                        <li
-                            key={lesson.id}
-                            className="border rounded px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                            onClick={() => setSelectedLesson(lesson)}
-                        >
-                            <span className="font-medium">{lesson.title}</span>
-                            <span className="ml-2 text-xs text-gray-500">Trang {lesson.pdfPage}</span>
-                            <p className="text-sm text-gray-600">{lesson.summary}</p>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        );
-    }
-
-    if (selectedBook && selectedChapter && selectedLesson) {
-        return (
-            <div>
-                <button className="mb-4 text-blue-600" onClick={() => setSelectedLesson(null)}>← Quay lại chương</button>
-                <h2 className="text-xl font-bold mb-2">{selectedLesson.title}</h2>
-                <p className="mb-2 text-gray-700">{selectedLesson.summary}</p>
-                <a
-                    href={selectedBook.downloads.pdf + `#page=${selectedLesson.pdfPage}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                    Xem trên PDF (trang {selectedLesson.pdfPage})
-                </a>
-                {selectedLesson.pdfPage && selectedBook?.downloads?.pdf && (
-                    <div className="mt-4">
-                        <iframe
-                            src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(selectedBook.downloads.pdf)}#page=${selectedLesson.pdfPage}`}
-                            style={{ width: '100%', height: '70vh', border: 'none' }}
-                            title="Xem trang bài học"
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {grouped.sgk.map(book => (
+                            <Card key={book.id} book={book} />
+                        ))}
                     </div>
-                )}
-            </div>
-        );
-    }
+                </section>
 
-    return null;
+                {/* RIGHT: Sách bài tập */}
+                <section className="bg-orange-50 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold">Sách bài tập</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {grouped.baitap.map(book => (
+                            <Card key={book.id} book={book} />
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
 }

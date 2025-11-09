@@ -17,9 +17,13 @@ export default function AppRouter() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/on-thi" element={<OnThi10THPT />} />
-                    <Route path="/on-thi/books" element={<OnThi10THPT activeView="bookResources" />} />
-                    <Route path="/on-thi/practice" element={<OnThi10THPT activeView="practiceSelection" />} />
-                    <Route path="/on-thi/exam-type" element={<OnThi10THPT activeView="examTypeSelection" />} />
+                    <Route path="/on-thi/books" element={<OnThi10THPT />} />
+                    <Route path="/on-thi/books/:bookId" element={<OnThi10THPT />} />
+                    <Route path="/on-thi/books/:bookId/:chapterId" element={<OnThi10THPT />} />
+                    <Route path="/on-thi/books/:bookId/:chapterId/:lessonId" element={<OnThi10THPT />} />
+                    <Route path="/on-thi/practice" element={<OnThi10THPT />} />
+                    <Route path="/on-thi/exam-type" element={<OnThi10THPT />} />
+
                     <Route path="/exam-taking" element={<ExamTaking />} />
                     <Route path="/exam-results" element={<ExamResult />} />
                 </Routes>
